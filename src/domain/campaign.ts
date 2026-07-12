@@ -10,7 +10,7 @@ export type Campaign = {
 export type ActivationPayment = {
   campaignId: string;
   paymentId: string;
-  status: "succeeded";
+  status: "pending" | "succeeded";
   paidAt: Date;
 };
 
@@ -24,6 +24,10 @@ export function activateCampaign(
 
   if (campaign.status !== "awaiting_payment") {
     throw new Error("Only awaiting-payment campaigns can be activated");
+  }
+
+  if (payment.status !== "succeeded") {
+    throw new Error("Only confirmed payments can activate a campaign");
   }
 
   return {

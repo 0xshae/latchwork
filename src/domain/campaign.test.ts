@@ -25,4 +25,23 @@ describe("activateCampaign", () => {
       activatedAt: new Date("2026-07-12T10:00:00.000Z"),
     });
   });
+
+  it("rejects activation until the matching payment is confirmed", () => {
+    const campaign: Campaign = {
+      id: "campaign_123",
+      status: "awaiting_payment",
+      activationPaymentId: null,
+      activatedAt: null,
+    };
+
+    expect(() =>
+      activateCampaign(campaign, {
+        campaignId: "campaign_123",
+        paymentId: "pay_123",
+        status: "pending",
+        paidAt: new Date("2026-07-12T10:00:00.000Z"),
+      }),
+    ).toThrow("Only confirmed payments can activate a campaign");
+  });
+
 });
