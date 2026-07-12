@@ -18,6 +18,9 @@ export default function Home() {
   const onboard = useMutation(api.campaigns.onboard);
   const [state, setState] = useState<OnboardingState>("editing");
   const [campaignId, setCampaignId] = useState<string | null>(null);
+  const [campaignEmail, setCampaignEmail] = useState<string | null>(null);
+  const [activationState, setActivationState] = useState<"idle" | "loading" | "error">("idle");
+  const [activationError, setActivationError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -26,11 +29,12 @@ export default function Home() {
     setError(null);
 
     const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "");
 
     try {
       const result = await onboard({
         name: String(form.get("name") ?? ""),
-        email: String(form.get("email") ?? ""),
+        email,
         role: String(form.get("role") ?? ""),
         primaryOffer: String(form.get("offer") ?? ""),
         idealClient: String(form.get("idealClient") ?? ""),
@@ -38,6 +42,7 @@ export default function Home() {
       });
 
       setCampaignId(result.campaignId);
+      setCampaignEmail(email);
       setState("ready");
     } catch (caughtError) {
       setError(
@@ -50,6 +55,30 @@ export default function Home() {
   }
 
   const isReady = state === "ready";
+
+  async function startActivation() {
+    if (!campaignId || !campaignEmail) return;
+    setActivationState("loading");
+    setActivationError(null);
+
+    try {
+      const response = await fetch("/api/activation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId, email: campaignEmail }),
+      });
+      const payload = (await response.json()) as { checkoutUrl?: string; error?: string };
+      if (!response.ok || !payload.checkoutUrl) {
+        throw new Error(payload.error ?? "Latchwork could not open checkout.");
+      }
+      window.location.assign(payload.checkoutUrl);
+    } catch (caughtError) {
+      setActivationError(
+        caughtError instanceof Error ? caughtError.message : "Latchwork could not open checkout.",
+      );
+      setActivationState("error");
+    }
+  }
 
   return (
     <main className="shell">
@@ -196,6 +225,21 @@ export default function Home() {
                 <strong>STANDBY</strong>
               </div>
             </div>
+
+            {isReady ? (
+              <div className="activation-action">
+                <button
+                  className="activation-button"
+                  disabled={activationState === "loading"}
+                  onClick={startActivation}
+                  type="button"
+                >
+                  {activationState === "loading" ? "Opening checkout..." : "Activate for ₹199"}
+                  <span aria-hidden="true">↗</span>
+                </button>
+                {activationError ? <p>{activationError}</p> : null}
+              </div>
+            ) : null}
 
             <div className="reasoning-block">
               <p className="eyebrow">agent note</p>
