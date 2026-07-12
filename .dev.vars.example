@@ -1,0 +1,3 @@
+# Dodo live-mode credentials. Do not commit .dev.vars.
+DODO_PAYMENTS_API_KEY=
+DODO_ACTIVATION_PRODUCT_ID=
