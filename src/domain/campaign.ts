@@ -1,4 +1,10 @@
-export type CampaignStatus = "awaiting_payment" | "active";
+export type CampaignStatus =
+  | "draft"
+  | "awaiting_payment"
+  | "active"
+  | "researching"
+  | "completed"
+  | "paused";
 
 export type Campaign = {
   id: string;
@@ -14,6 +20,13 @@ export type ActivationPayment = {
   paidAt: Date;
 };
 
+/**
+ * Activates a campaign after payment confirmation.
+ * Pure function — enforces:
+ *   - Payment must match the campaign
+ *   - Campaign must be in awaiting_payment
+ *   - Payment must have succeeded
+ */
 export function activateCampaign(
   campaign: Campaign,
   payment: ActivationPayment,
@@ -35,5 +48,21 @@ export function activateCampaign(
     status: "active",
     activationPaymentId: payment.paymentId,
     activatedAt: payment.paidAt,
+  };
+}
+
+/**
+ * Moves a campaign to awaiting_payment when checkout is created.
+ */
+export function requestPayment(campaign: Campaign): Campaign {
+  if (campaign.status !== "draft") {
+    throw new Error(
+      `Only draft campaigns can request payment. Current: "${campaign.status}"`,
+    );
+  }
+
+  return {
+    ...campaign,
+    status: "awaiting_payment",
   };
 }
