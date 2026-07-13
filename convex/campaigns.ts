@@ -18,8 +18,12 @@ export const onboard = mutation({
     targetDescription: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity?.subject;
+
     const createdAt = Date.now();
     const freelancerId = await ctx.db.insert("freelancers", {
+      userId,
       name: args.name,
       email: args.email.toLowerCase(),
       role: args.role,
